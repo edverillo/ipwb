@@ -37,13 +37,13 @@ from socket import error as socketerror
 from six.moves.urllib.parse import urlsplit, urlunsplit
 
 from requests import ReadTimeout
-from requests.exceptions impor HTTPError
+from requests.exceptions import HTTPError
 
-from . import util as ipwbConfig
-from .util import IPFSAPI_IP, IPFSAPI_PORT, IPWBREPLAY_IP, IPWBREPLAY_PORT
+from . import util as ipwbUtils
+from .util import IPFSAPI_HOST, IPFSAPI_PORT, IPWBREPLAY_HOST, IPWBREPLAY_PORT
 from .util import INDEX_FILE
 
-import indexer
+from . import indexer
 
 from base64 import b64decode
 from Crypto.Cipher import AES
@@ -137,12 +137,12 @@ def showWebUI(path):
         content = content.replace(
             'UNIQUE', str(uniqueURIRs))
 
-        content = content.replace(b'MEMCOUNT', bytes(str(mCount), 'utf-8'))
-        content = content.replace(b'UNIQUE', bytes(str(uniqueURIRs), 'utf-8'))
+        content = content.replace('MEMCOUNT', str(mCount))
+        content = content.replace('UNIQUE', str(uniqueURIRs))
         content = content.replace(
-            b'let uris = []',
-            bytes('let uris = {0}'.format(getURIsAndDatetimesInCDXJ(iFile)), 'utf-8'))
-        content = content.replace(b'INDEXSRC', bytes(iFile, 'utf-8'))
+            'let uris = []',
+            'let uris = {0}'.format(getURIsAndDatetimesInCDXJ(iFile)))
+        content = content.replace('INDEXSRC', iFile)
 
     fileExtension = os.path.splitext(path)[1]
 
