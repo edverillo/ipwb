@@ -963,7 +963,6 @@ def retrieveMemCount(cdxjFilePath=INDEX_FILE) -> (int, int):
     return mementoCount, len(bucket.keys())
 
 
-
 def objectifyCDXJData(lines, onlyURI):
     cdxjData = {'metadata': [], 'data': []}
     for line in lines:
