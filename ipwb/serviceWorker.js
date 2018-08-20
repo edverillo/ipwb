@@ -25,11 +25,8 @@ const rc = new Reconstructive({
 // <   notGet: function(FetchEvent) => boolean,
 // <   bannerElement: function(FetchEvent) => boolean,
 // <   bannerLogo: function(FetchEvent) => boolean,
-// <   homePage: function(FetchEvent) => boolean,
 // <   localResource: function(FetchEvent) => boolean
 // < }
-rc.exclusions.replayRoot = (event, config) =>
-  event.request.url.replace(/\/+$/, '') === self.location.origin
 rc.exclusions.specialEndpint = function (event, config) {
   return ['/webui/', '/daemon/', '/config/'].some(
     ep => event.request.url.startsWith(self.location.origin + ep))

@@ -55,7 +55,7 @@ def startReplay(warcFilename):
     pathOfWARC = os.path.join(os.path.dirname(moduleLocation) +
                               '/samples/warcs/' + warcFilename)
     tempFilePath = '/tmp/' + ''.join(random.sample(
-        string.ascii_uppercase + string.digits * 6, 6)) + '.cdxj'
+        string.ascii_uppercase + string.digits * 6, 12)) + '.cdxj'
 
     open(tempFilePath, 'a').close()  # Create placeholder file for replay
 

@@ -36,23 +36,33 @@ from socket import error as socketerror
 
 from six.moves.urllib.parse import urlsplit, urlunsplit
 
-from requests.exceptions import HTTPError
+from requests import ReadTimeout
+from requests.exceptions impor HTTPError
 
-from . import util as ipwbUtils
-from .util import IPFSAPI_HOST, IPFSAPI_PORT, IPWBREPLAY_HOST, IPWBREPLAY_PORT
+from . import util as ipwbConfig
+from .util import IPFSAPI_IP, IPFSAPI_PORT, IPWBREPLAY_IP, IPWBREPLAY_PORT
 from .util import INDEX_FILE
+
+import indexer
 
 from base64 import b64decode
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad
-
 import base64
 
 from werkzeug.routing import BaseConverter
 from .__init__ import __version__ as ipwbVersion
 
 
+from flask import flash, url_for
+from werkzeug.utils import secure_filename
+from flask import send_from_directory
+
+UPLOAD_FOLDER = '/tmp'
+ALLOWED_EXTENSIONS = ('.warc', '.warc.gz')
+
 app = Flask(__name__)
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.debug = False
 
 IPFS_API = ipfsapi.Client(IPFSAPI_HOST, IPFSAPI_PORT)
@@ -62,6 +72,42 @@ IPFS_API = ipfsapi.Client(IPFSAPI_HOST, IPFSAPI_PORT)
 def setServerHeader(response):
     response.headers['Server'] = 'InterPlanetary Wayback Replay/' + ipwbVersion
     return response
+
+
+def allowed_file(filename):
+    return filename.lower().endswith(ALLOWED_EXTENSIONS)
+
+
+@app.route('/upload', methods=['POST'])
+def upload_file():
+    # check if the post request has the file part
+    if 'file' not in request.files:
+        flash('No file part')
+        return redirect(request.url)
+    file = request.files['file']
+    # if user does not select file, browser also
+    # submit an empty part without filename
+    if file.filename == '':
+        flash('No selected file')
+        return redirect(request.url)
+    if file and allowed_file(file.filename):
+        filename = secure_filename(file.filename)
+        warcPath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file.save(warcPath)
+
+        # TODO: Check if semaphore lock exists, log it if so, wait for the lock
+        # to be released, and create a new lock
+
+        print('Indexing file from uploaded WARC at {0} to {1}'.format(
+            warcPath, app.cdxjFilePath))
+        indexer.indexFileAt(warcPath, outfile=app.cdxjFilePath)
+        print('Index updated at {0}'.format(app.cdxjFilePath))
+
+        app.cdxjFileContents = getIndexFileContents(app.cdxjFilePath)
+
+        # TODO: Release semaphore lock
+
+        return redirect('/')
 
 
 @app.route('/webui/<path:path>')
@@ -84,8 +130,12 @@ def showWebUI(path):
                 iFile = iFileAbs  # Local file
 
         (mCount, uniqueURIRs) = retrieveMemCount(iFile)
-        #mCount = str(mCount)
-        #uniqueURIRs = str(uniqueURIRs)
+        content = content.decode("utf-8")  # Content was a byte-like object
+
+        content = content.replace(
+            'MEMCOUNT', str(mCount))
+        content = content.replace(
+            'UNIQUE', str(uniqueURIRs))
 
         content = content.replace(b'MEMCOUNT', bytes(str(mCount), 'utf-8'))
         content = content.replace(b'UNIQUE', bytes(str(uniqueURIRs), 'utf-8'))
@@ -131,9 +181,6 @@ def commandDaemon(cmd):
         return generateDaemonStatusButton()
     elif cmd == 'start':
         subprocess.Popen(['ipfs', 'daemon'])
-        # retString = 'Failed to start IPFS daemon'
-        # if 'Daemon is ready' in check_output():
-        #  retString = 'IPFS daemon started'
         return Response('IPFS daemon starting...')
 
     elif cmd == 'stop':
@@ -141,11 +188,10 @@ def commandDaemon(cmd):
             installedIPFSVersion = IPFS_API.version()['Version']
             IPFS_API.shutdown()
         except (subprocess.CalledProcessError, UnsupportedIPFSVersions) as e:
-            # go-ipfs < 0.4.10
-            if os.name == 'nt':
-                subprocess.call(['taskkill', '/im', 'ipfs.exe', '/F'])
-            else:
+            if os.name != 'nt':  # Big hammer
                 subprocess.call(['killall', 'ipfs'])
+            else:
+                subprocess.call(['taskkill', '/im', 'ipfs.exe', '/F'])
 
         return Response('IPFS daemon stopping...')
     else:
@@ -186,7 +232,7 @@ def showMementosForURIRs(urir):
             fields = line.split(' ', 2)
             dt14 = fields[1]
             dtrfc1123 = ipwbUtils.digits14ToRFC1123(fields[1])
-            msg += ('<li><a href="/{1}/{0}">{0} at {2}</a></li>'
+            msg += ('<li><a href="/memento/{1}/{0}">{0} at {2}</a></li>'
                     .format(unsurt(fields[0]), dt14, dtrfc1123))
         msg += '</ul>'
     else:  # No captures for URI-R
@@ -340,6 +386,7 @@ def showTimeMap(urir, format):
         hostAndPort[0],
         hostAndPort[1], urir)
 
+    tm = ''  # Initialize for usage beyond below conditionals
     if format == 'link':
         tm = generateLinkTimeMapFromCDXJLines(
             cdxjLinesWithURIR, s, request.url, tgURI)
@@ -566,7 +613,6 @@ def show_uri(path, datetime=None):
             searchString = surtedURI + ' ' + datetime
 
         cdxjLine = getCDXJLine_binarySearch(searchString, indexPath)
-        print('CDXJ Line: {0}'.format(cdxjLine))
 
     except Exception as e:
         print(sys.exc_info()[0])
@@ -604,6 +650,7 @@ def show_uri(path, datetime=None):
 
     except ipfsapi.exceptions.TimeoutError:
         print("{0} not found at {1}".format(cdxjParts[0], digests[-1]))
+
         respString = ('{0} not found in IPFS :(' +
                       ' <a href="http://{1}:{2}">Go home</a>').format(
             path, IPWBREPLAY_HOST, IPWBREPLAY_PORT)
@@ -817,6 +864,7 @@ def fetchRemoteCDXJFile(path):
     else:  # http://, ftp://, smb://, file://
         print('Path contains a scheme, fetching remote file...')
         fileContents = ipwbUtils.fetchRemoteFile(path)
+
         return fileContents
 
     # TODO: Check if valid CDXJ here before returning
@@ -892,6 +940,7 @@ def retrieveMemCount(cdxjFilePath=INDEX_FILE) -> (int, int):
 
     if not indexFileContents:
         return errReturn
+
     lines = indexFileContents.strip().split('\n')
 
     if not lines:
@@ -899,6 +948,7 @@ def retrieveMemCount(cdxjFilePath=INDEX_FILE) -> (int, int):
     mementoCount = 0
 
     bucket = {}
+
     for i, l in enumerate(lines):
         validCDXJLine = ipwbUtils.isValidCDXJLine(l)
         metadataRecord = ipwbUtils.isCDXJMetadataRecord(l)
@@ -911,6 +961,7 @@ def retrieveMemCount(cdxjFilePath=INDEX_FILE) -> (int, int):
                 bucket[surtURI] += 1
 
     return mementoCount, len(bucket.keys())
+
 
 
 def objectifyCDXJData(lines, onlyURI):

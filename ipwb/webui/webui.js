@@ -8,12 +8,14 @@ function shortestFirst (a, b) {
   return 0
 }
 
-function showURIs () {
-  let ul = document.getElementById('uriList')
-  if (ul.childNodes.length > 0) {
-    return // Prevent multiple adds of the URI list to the DOM
-  }
+function hideURIs () {
+  document.getElementById('uris').classList.add('hidden')
+  document.getElementById('memCountListLink').classList.remove('activated')
+  window.localStorage.setItem('showURIs', 'false')
+}
 
+function addURIListToDOM () {
+  let ul = document.getElementById('uriList')
   let htmlPages = 0
   const uriKeys = Object.keys(uris).sort(shortestFirst)
   for (let uri of uriKeys) {
@@ -34,6 +36,14 @@ function showURIs () {
     uris[uri]['mime'] === 'text/html' ? ++htmlPages : ''
   }
   document.getElementById('htmlPages').innerHTML = htmlPages
+}
+
+
+function showURIs () {
+  if (document.getElementById('uriList').childNodes.length === 0) {
+    addURIListToDOM() // Prevent multiple adds of the URI list to the DOM
+  }
+
   document.getElementById('memCountListLink').className = ['activated']
   document.getElementById('uris').classList.remove('hidden')
   setPlurality()
@@ -41,7 +51,7 @@ function showURIs () {
 
   setUIExpandedState(uris)
   // Maintain visible state of URI display for future retrieval
-  window.localStorage.setItem('showURIs', true)
+  window.localStorage.setItem('showURIs', 'true')
 }
 
 function setUIExpandedState (urisObj) {
@@ -76,13 +86,28 @@ String.prototype.hashCode = function () {
   return hash
 }
 
+function toggleURIDisplay () {
+  if (window.localStorage.getItem('showURIs') === 'true') {
+    hideURIs()
+  } else {
+    showURIs()
+  }
+}
+
 function addEventListeners () {
   let target = document.getElementById('memCountListLink')
-  target.addEventListener('click', showURIs, false)
+  target.addEventListener('click', toggleURIDisplay, false)
 
   let showAllInListingButton = document.getElementById('showEmbeddedURI')
   showAllInListingButton.onclick = function showAllURIs () {
-    document.getElementById('uriList').classList.add('forceDisplay')
+    const uriList = document.getElementById('uriList')
+    if (this.innerHTML === this.dataset.defaultvalue) {
+      this.innerHTML = this.dataset.activatedvalue
+      uriList.classList.add('forceDisplay')
+    } else {
+      this.innerHTML = this.dataset.defaultvalue
+      uriList.classList.remove('forceDisplay')
+    }
   }
 
   getIPFSWebUIAddress()
@@ -100,6 +125,8 @@ function setShowURIsVisibility () {
 
   if (window.localStorage.getItem('showURIs') && previousHash === newHash) {
     showURIs()
+  } else {
+    hideURIs()
   }
 }
 

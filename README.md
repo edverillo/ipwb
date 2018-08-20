@@ -17,6 +17,12 @@ A pictorial representation of the ipwb indexing and replay process:
 
 ![image](https://raw.githubusercontent.com/oduwsdl/ipwb/master/docs/diagram_72.png)
 
+An important aspect of archival replay systems is rewriting various resource references for proper memento reconstruction so that they are dereferenced properly from the archive from around the same datetime as of the root memento and not from the live site (in which case the resource might have changed or gone missing). Many archival replay systems perform server-side rewriting, but it has its limitations when URIs are generated using JavaScript. To handle this we use [Service Worker](https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API) for rerouting requests on the client-side when they are dereferenced to avoid any server-side rewiring. For this, we have implemented a separate library, [Reconstructive](https://oduwsdl.github.io/Reconstructive/), which is reusable and extendable by any archival replay system.
+
+Another important feature of archival replays is the inclusion of an archival banner in mementos. The purpose of an archival banner is to highlight that a replayed page is a memento and not a live page, to provide metadata about the memento and the archive, and to facilitate additional interactivity. Many archival banners used in different web archival replay systems are obtrusive in nature and have issues like style leakage. To eliminate both of these issues we have implemented a [Custom HTML Element](https://developer.mozilla.org/en-US/docs/Web/Web_Components/Using_custom_elements), [<reconstructive-banner>](https://oduwsdl.github.io/Reconstructive/docs/class/Reconstructive/reconstructive-banner.js~ReconstructiveBanner.html) as part of the [Reconstructive](https://oduwsdl.github.io/Reconstructive/) library and used in the ipwb.
+
+Both *Service Worker* and *Custom Element* APIs are new and only supported in modern web browsers. So, we expect the replay to function properly in only the modern browsers.
+
 ## Installing
 
 InterPlanetary Wayback requires Python 2.7+ though we are working on having it work on Python 3 as well (see [#51](https://github.com/oduwsdl/ipwb/issues/51)).
@@ -86,6 +92,12 @@ $ ipwb replay QmYwAPJzv5CZsnANOTaREALhashYgPpHdWEz79ojWnPbdG
 ```
 
 Once started, the replay system's web interface can be accessed through a web browser, e.g., <http://localhost:5000/> by default.
+
+To run it under a domain name other than `localhost`, the easiest approach is to use a reverse proxy that supports HTTPS. The replay system utilizes [Service Worker](https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API) for URL rerouting/rewriting to prevent [live leakage (zombies)](http://ws-dl.blogspot.com/2012/10/2012-10-10-zombies-in-archives.html). However, for security reason many web browsers have mandated HTTPS for the Service Worker API with only exception if the domain is `localhost`. [Caddy Server](https://caddyserver.com/) and [Traefik](https://traefik.io/) can be used as a reverse-proxy server and are very easy to setup. They come with built-in HTTPS support and manage (install and update) TLS certificates transparently and automatically from [Let's Encrypt](https://letsencrypt.org/). However, any web server proxy that has HTTPS support on the front-end will work. To make ipwb replay aware of the proxy, use `--proxy` or `-P` flag to supply the proxy URL. This way the replay will yield the supplied proxy URL as a prefix when generating various fully qualified domain name (FQDN) URIs or absolute URIs (for example, those in the TimeMap or Link header) instead of the default `http://localhost:5000`. This can be necessary when the service is running in a private network or a container and only exposed via a reverse-proxy. Suppose a reverse-proxy server is running and ready to forward all traffic on the `https://ipwb.example.com` to the ipwb replay server then the replay can be started as following:
+
+```
+$ ipwb replay --proxy=https://ipwb.example.com <path/to/cdxj>
+```
 
 ## Using Docker
 
@@ -184,8 +196,31 @@ This repo contains the code for integrating [WARC](http://www.iso.org/iso/catalo
 - The [Joint Conference on Digital Libraries 2016](http://www.jcdl2016.org/) in Newark, NJ in June 2016.
 - The [Web Archiving and Digital Libraries (WADL) 2016 workshop](http://fox.cs.vt.edu/wadl2016.html) in Newark, NJ in June 2016.
 - The [Theory and Practice on Digital Libraries (TPDL) 2016](http://www.tpdl2016.org/) in Hannover, Germany in September 2016.
-- The [Archives Unleashed 4.0: Web Archive Datathon]() in London, England in June 2017.
+- The [Archives Unleashed 4.0: Web Archive Datathon](https://archivesunleashed.com/call-for-participation-au4/) in London, England in June 2017.
 - The [International Internet Preservation Consortium (IIPC) Web Archiving Conference (WAC) 2017](http://netpreserve.org/wac2017/) in London, England in June 2017.
+- The [Decentralized Web Summit 2018's](https://www.decentralizedweb.net/) IPFS Lab Day in San Francisco, CA in August 2018.
+
+### Citing Project
+
+We have numerous publications related to this project, but the most significant and primary one was published in TPDL 2016. ([Read the PDF](http://www.cs.odu.edu/~mkelly/papers/2016_tpdl_ipwb.pdf))
+
+> Mat Kelly, Sawood Alam, Michael L. Nelson, and Michele C. Weigle. __InterPlanetary Wayback: Peer-To-Peer Permanence of Web Archives__. In _Proceedings of the 20th International Conference on Theory and Practice of Digital Libraries_, pages 411–416, Hamburg, Germany, June 2016.
+
+```latex
+@INPROCEEDINGS{ipwb-tpdl2016,
+  AUTHOR    = {Mat Kelly and
+               Sawood Alam and
+               Michael L. Nelson and
+               Michele C. Weigle},
+  TITLE     = {{InterPlanetary Wayback}: Peer-To-Peer Permanence of Web Archives},
+  BOOKTITLE = {Proceedings of the 20th International Conference on Theory and Practice of Digital Libraries},
+  PAGES     = {411--416},
+  MONTH     = {June},
+  YEAR      = {2016},
+  ADDRESS   = {Hamburg, Germany},
+  DOI       = {10.1007/978-3-319-43997-6_35}
+}
+```
 
 # License
 

@@ -17,6 +17,7 @@ let uris = []
 </script>
 </head>
 <body>
+
 <div id="wrapper">
   <div>
     <h1><img src="./webui/logo.png" alt="ipwb" /></h1>
@@ -31,14 +32,26 @@ let uris = []
     <summary>Options and Details...</summary>
       <div id="iframeWrapper"><label id="daemonStatusLabel">IPFS Daemon: </label><iframe src="daemon/status" id="daemonStatus"></iframe></div>
       <p><label>Archive Index(es): </label>INDEXSRC</p>
-      <p><label id="swLabel">Service Worker: </label><div><span id="serviceWorkerVersion">checking...</span><br /><button id="reinstallServiceWorker">Reinstall Service Worker</button></div></p>
+      <p><label class="twoRowLabel">Service Worker: </label><div><span id="serviceWorkerVersion">checking...</span><br /><button id="reinstallServiceWorker">Reinstall Service Worker</button></div></p>
+      <p><form method="post" action="/upload" enctype="multipart/form-data">
+        <label class="twoRowLabel">Upload WARC</label>
+        <div>
+          <input type="file" name="file"><br />
+          <input type="submit" value="Upload" style="display: inline">
+        </div>
+        </form>
+      </p>
       <p class="centered topSpace"><a id="webui" target="_blank">IPFS WebUI</a></p>
       <p class="centered"><a href="https://github.com/oduwsdl/ipwb/" target="_blank">IPWB Help</a></p>
+
   </details>
+
   </footer>
     <div id="uris" class="hidden">
     <h3 id="urisHeader"><abbr title="Uniform Resource Identifiers">URIs</abbr> locally available</h3>
-    <h4 id="htmlCountHeader">MEMCOUNT mementos of UNIQUE resources with <span id="htmlPages">0</span> HTML page<span id="htmlPagesPlurality">s</span> listed <button id="showEmbeddedURI">Show all</button></h4>
+    <h4 id="htmlCountHeader">MEMCOUNT mementos of UNIQUE resources with <span id="htmlPages">0</span>
+        HTML page<span id="htmlPagesPlurality">s</span> listed
+        <button id="showEmbeddedURI" data-defaultValue="Show All" data-activatedValue="Show Only HTML Pages">Show All</button></h4>
     <ul id="uriList"></ul>
   </div>
 

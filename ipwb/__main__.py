@@ -3,7 +3,10 @@ import os
 import argparse
 import string  # For generating a temp file for stdin
 import random  # For generating a temp file for stdin
+
 from .__init__ import __version__ as ipwbVersion
+from .util import INDEX_FILE
+
 
 # ipwb modules
 from . import replay
@@ -44,9 +47,10 @@ def checkArgs_replay(args):
                   ' the indexer to the replay system.'))
             sys.exit()
 
+        random.seed()
         # Write data to temp file (sub-optimal)
         tempFilePath = '/tmp/' + ''.join(random.sample(
-              string.ascii_uppercase + string.digits * 6, 6)) + '.cdxj'
+              string.ascii_uppercase + string.digits * 6, 12)) + '.cdxj'
         with open(tempFilePath, 'w') as f:
             f.write(cdxjIn)
         args.index = tempFilePath

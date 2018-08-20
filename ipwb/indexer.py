@@ -36,6 +36,7 @@ from .util import IPFSAPI_HOST, IPFSAPI_PORT
 
 import requests
 import datetime
+import shutil
 
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad
@@ -113,7 +114,7 @@ def indexFileAt(warcPaths, encryptionKey=None,
     cdxjLines = []
 
     if outfile:
-        outdir = os.path.dirname(outfile)
+        outdir = os.path.dirname(os.path.abspath(outfile))
         if not os.path.exists(outdir):
             try:
                 os.makedirs(outdir)
@@ -170,6 +171,10 @@ def indexFileAt(warcPaths, encryptionKey=None,
         outputFile.close()
     else:
         print('\n'.join(cdxjLines))
+
+
+def sanitizecdxjLine(cdxjLine):
+    return cdxjLine
 
 
 def getCDXJLinesFromFile(warcPath, **encCompOpts):

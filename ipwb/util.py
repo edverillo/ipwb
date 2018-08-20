@@ -3,6 +3,7 @@ from __future__ import print_function
 from os.path import expanduser
 from os.path import basename
 
+import six
 import os
 from os import devnull
 import json
@@ -24,6 +25,9 @@ from .__init__ import __version__ as ipwbVersion
 
 # from requests.exceptions import ConnectionError
 from ipfsapi.exceptions import ConnectionError
+
+if six.PY2:
+    import exceptions
 
 
 IPFSAPI_HOST = 'localhost'
@@ -82,26 +86,20 @@ def isValidCDXJLine(cdxjLine):
     except ValueError:  # Not valid JSON
         return False
     except NameError:
-        metadataRecord = isCDXJMetadataRecord(cdxjLine)
-        return metadataRecord
+        return isCDXJMetadataRecord(cdxjLine)
     except Exception as e:
         return False
 
 
-def sanitizecdxjLine(cdxjLine):
-    return cdxjLine
+# Compare versions of software, <0 if a<b, 0 if ==, >1 if b>a
+def compareVersions(versionA, versionB):
+    def normalize(v):
+        return [int(x) for x in re.sub(r'(\.0+)*$', '', v).split(".")]
+    return cmp(normalize(versionA), normalize(versionB))
 
 
 def isCDXJMetadataRecord(cdxjLine):
-    if len(cdxjLine) == 0:
-        return False
-
-    validCDXJMetadataFields = ['!meta', '!context']
-    if '!context' in cdxjLine or '!meta' in cdxjLine:
-        firstField = cdxjLine.split(' ', 1)[0]
-        return firstField in validCDXJMetadataFields
-
-    return False
+    return cdxjLine.strip()[:1] == '!'
 
 
 def isLocalHosty(uri):
@@ -124,7 +122,7 @@ def retrieveMemCount():
     with open(INDEX_FILE, 'r') as cdxjFile:
         for i, l in enumerate(cdxjFile):
             pass
-        return i+1
+        return i + 1
 
 
 def setLocale():
