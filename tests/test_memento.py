@@ -22,7 +22,7 @@ def getURIMsFromTimeMapInWARC(warcFilename):
     tm = urlopen(tmURI).read()
 
     urims = []
-    for line in tm.split('\n'):
+    for line in tm.split(b'\n'):
         isAMemento = len(re.findall('rel=".*memento"', line)) > 0
         if isAMemento:
             urims.append(re.findall('<(.*)>', line)[0])
