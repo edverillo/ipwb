@@ -9,6 +9,8 @@ import os
 import subprocess
 # import urllib2
 from six.moves.urllib.request import urlopen
+from six.moves.urllib.error import URLError
+from six.moves.urllib_parse import urlencode
 import random
 import string
 import re
@@ -23,9 +25,11 @@ def getURIMsFromTimeMapInWARC(warcFilename):
 
     urims = []
     for line in tm.split(b'\n'):
+        line = line.decode('utf-8')
         isAMemento = len(re.findall('rel=".*memento"', line)) > 0
         if isAMemento:
             urims.append(re.findall('<(.*)>', line)[0])
+
     ipwbTest.stopReplay()
 
     return urims
@@ -37,8 +41,10 @@ def getRelsFromURIMSinWARC(warc):
 
     # Get Link header values for each memento
     linkHeaders = []
+
     for urim in urims:
-        linkHeaders.append(urlopen(urim).info().getheader('Link'))
+        # Below in py2/3 compatible
+        linkHeaders.append(urlopen(urim).headers['Link'])
     ipwbTest.stopReplay()
 
     relsForURIMs = []
@@ -53,6 +59,11 @@ def getRelsFromURIMSinWARC(warc):
 @pytest.mark.mementoRelationOneCount
 def test_mementoRelations_one():
     relsForURIMs = getRelsFromURIMSinWARC('1memento.warc')
+    print(relsForURIMs)
+
+
+    # TODO: Py3 complains "TypeError: 'filter' object is not subscriptable"
+    # ...this will need to be reimplemented across all functions here
 
     relsForURIMs = filter(lambda k: 'memento' in k, relsForURIMs[0])
     m1_m1 = relsForURIMs[0].split(' ')

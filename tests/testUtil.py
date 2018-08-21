@@ -20,17 +20,19 @@ def createUniqueWARC():
     warcInPath = os.path.join(os.path.dirname(__file__) + '/samples/warcs/' +
                               warcInFilename)
 
-    stringToChange = 'abcdefghijklmnopqrstuvwxz'
-    randomString = getRandomString(len(stringToChange))
+    stringToChange = b'abcdefghijklmnopqrstuvwxz'
+    randomString = getRandomBytes(len(stringToChange))
+    print('radon')
+    print(randomString)
 
-    with open(warcInPath, 'r') as warcFile:
+    with open(warcInPath, mode='rb') as warcFile:
         newContent = warcFile.read().replace(stringToChange, randomString)
 
     warcOutFilename = warcInFilename.replace('.warc', '_' +
-                                             randomString + '.warc')
+                                             str(randomString) + '.warc')
     warcOutPath = os.path.join(os.path.dirname(__file__) +
                                '/samples/warcs/' + warcOutFilename)
-    with open(warcOutPath, 'w') as warcFile:
+    with open(warcOutPath, 'wb') as warcFile:
         warcFile.write(newContent)
 
     return warcOutPath
@@ -39,6 +41,10 @@ def createUniqueWARC():
 def getRandomString(n):
     return ''.join(random.SystemRandom().choice(
                    string.ascii_lowercase + string.digits) for _ in range(n))
+
+
+def getRandomBytes(n):
+    return bytes(getRandomString(n), 'utf-8')
 
 
 def countCDXJEntries(cdxjData):
