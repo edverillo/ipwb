@@ -2,7 +2,9 @@
 <html lang="en" dir="ltr">
   <head>
     <meta charset="utf-8">
+    <link rel="stylesheet" href="/ipwbassets/webui.css" />
     <link rel="stylesheet" href="/ipwbassets/admin.css" />
+      <script src="ipwbassets/webui.js"></script>
       <script>
         let uris = {{ summary.uris|safe }}
       </script>
@@ -17,9 +19,9 @@
       <h2>Status</h2>
       <dl>
         <dt>IPWB Version</dt>
-        <dd>{{ status.ipwbVersion }}</dd>
+        <dd>{{ status.ipwb_version }}</dd>
         <dt>IPFS Endpoint</dt>
-        <dd>{{ status.ipfsEndpoint }} (<a href="#" rel="noreferrer">Change</a> | <a href="#" rel="noreferrer">Web UI</a>)</dd>
+        <dd>{{ status.ipfs_endpoint }} (<a href="#" rel="noreferrer">Change</a> | <a href="#" rel="noreferrer">Web UI</a>)</dd>
         <dt>IPFS Status</dt>
         <dd>
             <label id="daemonStatusLabel">IPFS Daemon: </label><iframe src="ipfsdaemon/status" id="daemonStatus"></iframe>
@@ -46,15 +48,25 @@
     </section>
     <section>
       <h2>Collection</h2>
-      <p>{{ summary.urimCount }} mementos of {{ summary.urirCount }} resources with {{ summary.htmlCount }} HTML pages between {{ summary.earliest }} and {{ summary.latest }}</p>
+      <p>{{ summary.urim_count }} mementos of {{ summary.urir_count }} resources with {{ summary.html_count }} HTML pages between {{ summary.earliest }} and {{ summary.latest }}</p>
 
-        <span id="htmlPages">0</span>
-        HTML page<span id="htmlPagesPlurality">s</span> listed
+        <!--<span id="htmlPages">0</span>
+        HTML page<span id="htmlPagesPlurality">s</span> listed-->
 
         <ul id="uriList"></ul>
 
-        <button type="button" name="cdxj">Upload WARC File</button>
-      <p>TODO: Paginated list of mementos with option to filter and sort</p>
+        <form method="post" action="/upload" enctype="multipart/form-data">
+        <label class="twoRowLabel">Upload WARC</label>
+        <div>
+          <input type="file" name="file"><br />
+          <input type="submit" value="Upload" style="display: inline">
+        </div>
+        </form>
+
+        <ul id="uriList"></ul>
     </section>
+  <script>
+    addURIListToDOM()
+  </script>
   </body>
 </html>

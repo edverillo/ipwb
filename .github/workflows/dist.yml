@@ -1,0 +1,27 @@
+name: Publish to PyPI
+
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  build-n-publish:
+    name: Build and Publish Package
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python 3.8
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+      - name: Upgrade setuptools and wheel
+        run: python -m pip install --user --upgrade setuptools wheel
+      - name: Build a binary wheel and a source tarball
+        run: python setup.py sdist bdist_wheel
+      - name: Publish package to PyPI
+        uses: pypa/gh-action-pypi-publish@master
+        with:
+          password: ${{ secrets.pypi_password }}
+          # The PyPI API token (password) was generated as per https://pypi.org/help/#apitoken
+          # The token is stored in this GH repo under `Settings > Secrets > pypi_password`

@@ -13,7 +13,7 @@ setup(
     url='https://github.com/oduwsdl/ipwb',
     download_url="https://github.com/oduwsdl/ipwb",
     author='Mat Kelly',
-    author_email='mkelly@cs.odu.edu',
+    author_email='me@matkelly.com',
     description=desc,
     packages=['ipwb'],
     license='MIT',
@@ -24,8 +24,8 @@ setup(
     ],
     install_requires=[
         'warcio>=1.5.3',
-        'ipfsapi>=0.4.2',
-        'Flask==0.12.3',
+        'ipfshttpclient>=0.6.0',
+        'Flask==1.1.1',
         'pycryptodome>=3.4.11',
         'requests>=2.19.1',
         'beautifulsoup4>=4.6.3',
@@ -52,11 +52,12 @@ setup(
     zip_safe=False,
     keywords='http web archives ipfs distributed odu wayback memento',
     classifiers=[
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 4 - Beta',
 
         'Environment :: Web Environment',
 
-        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
 
         'License :: OSI Approved :: MIT License',
 

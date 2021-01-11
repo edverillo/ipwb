@@ -1,4 +1,5 @@
 /* eslint-env serviceworker */
+/* global Reconstructive */
 
 // This makes a class module available named "Reconstructive"
 importScripts('/ipwbassets/reconstructive.js')
@@ -29,7 +30,7 @@ const rc = new Reconstructive({
 // <   localResource: function(FetchEvent) => boolean
 // < }
 rc.exclusions.specialEndpint = function (event, config) {
-  return ['/ipwbassets/', '/ipfsdaemon/', '/ipwbconfig/'].some(
+  return ['/ipwbassets/', '/ipfsdaemon/'].some(
     ep => event.request.url.startsWith(self.location.origin + ep))
 }
 

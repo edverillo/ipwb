@@ -2,10 +2,10 @@
 
 set -e
 
-if [[ ("$1" = "ipwb") && ("$1" != "$@") && ("$@" != *" -h"*) && ("$@" != *" --help"*) ]]
+if [[ ("$@" != "ipwb") && ("$@" != *" -h"*) && ("$@" != *" --help"*) ]]
 then
     # Run the IPFS daemon in background, initialize configs if necessary
-    ipfs daemon --init &
+    ipfs daemon --init --migrate &
 
     # Wait for IPFS daemon to be ready
     while ! curl -s localhost:5001 > /dev/null

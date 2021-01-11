@@ -1,43 +1,42 @@
-import sys
-import os
 import argparse
-import string  # For generating a temp file for stdin
+import os
 import random  # For generating a temp file for stdin
-from .__init__ import __version__ as ipwbVersion
+import string  # For generating a temp file for stdin
+import sys
+import tempfile
 
 # ipwb modules
-from . import replay
-from . import indexer
-from . import util
-
-from .util import IPFSAPI_HOST, IPFSAPI_PORT, IPWBREPLAY_HOST, IPWBREPLAY_PORT
+from ipwb import settings, replay, indexer, util
+from ipwb.error_handler import exception_logger
+from .__init__ import __version__ as ipwb_version
 
 
+@exception_logger(catch=not settings.DEBUG)
 def main():
-    util.checkForUpdate()
-    args = checkArgs(sys.argv)
+    checkArgs(sys.argv)
 
 
 def checkArgs_index(args):
-    if not util.isDaemonAlive():
-        sys.exit()
+    util.check_daemon_is_alive()
+
     encKey = None
-    compressionLevel = None
+    compression_level = None
     if args.e:
         encKey = ''
     if args.c:
-        compressionLevel = 6  # Magic 6, TA-DA!
+        compression_level = 6  # Magic 6, TA-DA!
 
-    indexer.indexFileAt(args.warcPath, encKey, compressionLevel,
-                        args.compressFirst, outfile=args.outfile,
-                        debug=args.debug)
+    indexer.index_file_at(args.warc_path, encKey, compression_level,
+                          args.compressFirst, outfile=args.outfile,
+                          debug=args.debug)
 
 
 def checkArgs_replay(args):
-    suppliedIndexParameter = hasattr(args, 'index') and args.index is not None
-    likelyPiping = not sys.stdin.isatty()
+    supplied_index_parameter = hasattr(args, 'index') and \
+                               args.index is not None
+    likely_piping = not sys.stdin.isatty()
 
-    if not suppliedIndexParameter and likelyPiping:
+    if not supplied_index_parameter and likely_piping:
         cdxjIn = ''.join(sys.stdin.readlines())
         if len(cdxjIn) == 0:  # Daemon was not running, so nothing was indexed
             print(('ERROR: The IPFS daemon must be running to pipe input from'
@@ -46,24 +45,26 @@ def checkArgs_replay(args):
 
         random.seed()
         # Write data to temp file (sub-optimal)
-        tempFilePath = '/tmp/' + ''.join(random.sample(
-              string.ascii_uppercase + string.digits * 6, 12)) + '.cdxj'
-        with open(tempFilePath, 'w') as f:
+
+        fh, args.index = tempfile.mkstemp(suffix='.cdxj')
+        os.close(fh)
+        with open(args.index, 'w') as f:
             f.write(cdxjIn)
-        args.index = tempFilePath
-        suppliedIndexParameter = True
+
+        supplied_index_parameter = True
 
     proxy = None
     if hasattr(args, 'proxy') and args.proxy is not None:
-        print('Proxying to ' + args.proxy)
+        print(f'Proxying to {args.proxy}')
         proxy = args.proxy
 
     # TODO: add any other sub-arguments for replay here
-    if suppliedIndexParameter:
-        replay.start(cdxjFilePath=args.index, proxy=proxy)
+    if supplied_index_parameter:
+        replay.start(cdxj_file_path=args.index, proxy=proxy)
     else:
         print('ERROR: An index file must be specified if not piping, e.g.,')
-        print('> ipwb replay /path/to/your/index.cdxj\n')
+        print(("> ipwb replay "
+               f"{os.path.join('path', 'to', 'your', 'index.cdxj')}\n"))
 
         args.onError()
         sys.exit()
@@ -87,9 +88,9 @@ def checkArgs(argsIn):
         description="Index a WARC file for replay in ipwb",
         help="Index a WARC file for replay in ipwb")
     indexParser.add_argument(
-        'warcPath',
+        'warc_path',
         help="Path to a WARC[.gz] file",
-        metavar="index <warcPath>",
+        metavar="index <warc_path>",
         nargs='+',
         default=None)
     indexParser.add_argument(
@@ -137,16 +138,24 @@ def checkArgs(argsIn):
 
     parser.add_argument(
         '-d', '--daemon',
-        help='Location of ipfs daemon (default 127.0.0.1:5001)',
-        default='{0}:{1}'.format(IPFSAPI_HOST, IPFSAPI_PORT),
+        help=("Multi-address of IPFS daemon "
+              "(default /dns/localhost/tcp/5001/http)"),
+        default=util.IPFSAPI_MUTLIADDRESS,
         dest='daemon_address')
     parser.add_argument(
         '-v', '--version', help='Report the version of ipwb', action='version',
-        version='InterPlanetary Wayback ' + ipwbVersion)
+        version=f'InterPlanetary Wayback {ipwb_version}')
+    parser.add_argument(
+        '-u', '--update-check',
+        action='store_true',
+        help='Check whether an updated version of ipwb is available'
+        )
+    parser.set_defaults(func=util.check_for_update)
 
     argCount = len(argsIn)
     cmdList = ['index', 'replay']
-    baseParserFlagList = ['-d', '--daemon', '-v', '--version']
+    baseParserFlagList = ['-d', '--daemon', '-v', '--version',
+                          '-u', '--update-check']
 
     # Various invocation error, used to show appropriate help
     cmdError_index = argCount == 2 and argsIn[1] == 'index'

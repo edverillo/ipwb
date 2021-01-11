@@ -1,4 +1,4 @@
-[![image](https://raw.githubusercontent.com/oduwsdl/ipwb/master/docs/logo.png)](https://pypi.python.org/pypi/ipwb)
+[![image](https://github.com/oduwsdl/ipwb/raw/master/docs/logo_stroked_400px.png)](https://pypi.python.org/pypi/ipwb)
 
 # InterPlanetary Wayback (ipwb)
 
@@ -21,13 +21,11 @@ An important aspect of archival replay systems is rewriting various resource ref
 
 Another important feature of archival replays is the inclusion of an archival banner in mementos. The purpose of an archival banner is to highlight that a replayed page is a memento and not a live page, to provide metadata about the memento and the archive, and to facilitate additional interactivity. Many archival banners used in different web archival replay systems are obtrusive in nature and have issues like style leakage. To eliminate both of these issues we have implemented a [Custom HTML Element](https://developer.mozilla.org/en-US/docs/Web/Web_Components/Using_custom_elements), [<reconstructive-banner>](https://oduwsdl.github.io/Reconstructive/docs/class/Reconstructive/reconstructive-banner.js~ReconstructiveBanner.html) as part of the [Reconstructive](https://oduwsdl.github.io/Reconstructive/) library and used in the ipwb.
 
-Both *Service Worker* and *Custom Element* APIs are new and only supported in modern web browsers. So, we expect the replay to function properly in only the modern browsers.
-
 ## Installing
 
-InterPlanetary Wayback requires Python 2.7+ though we are working on having it work on Python 3 as well (see [#51](https://github.com/oduwsdl/ipwb/issues/51)).
+InterPlanetary Wayback (ipwb) requires Python 3.7+. ipwb can also be used with Docker ([see below](#user-content-using-docker)).
 
-The latest release of ipwb can be installed using pip:
+For conventional usage, the latest release of ipwb can be installed using pip:
 
 ```
 $ pip install ipwb
@@ -38,7 +36,6 @@ The latest development version containing changes not yet released can be instal
 ```
 $ git clone https://github.com/oduwsdl/ipwb
 $ cd ipwb
-$ pip install -r requirements.txt
 $ pip install ./
 ```
 
@@ -124,7 +121,7 @@ To build an image from the source, run the following command from the directory 
 $ docker image build -t oduwsdl/ipwb .
 ```
 
-By default the image building process also performs tests, so it might take a while to build the image. It ensures that an image will not be created with failing tests. However, it is possible to skip tests by supplying a build-arg `--build-arg SKIPTEST=true` as illustrated below:
+By default, the image building process also performs tests, so it might take a while to build the image. It ensures that an image will not be created with failing tests. However, it is possible to skip tests by supplying a build-arg `--build-arg SKIPTEST=true` as illustrated below:
 
 ```
 $ docker image build --build-arg SKIPTEST=true -t oduwsdl/ipwb .
@@ -136,18 +133,20 @@ Usage of sub-commands in ipwb can be accessed through providing the `-h` or `--h
 
 ```
 $ ipwb -h
-usage: ipwb [-h] [-d DAEMON_ADDRESS] [-v] {index,replay} ...
+usage: ipwb [-h] [-d DAEMON_ADDRESS] [-v] [-u] {index,replay} ...
 
 InterPlanetary Wayback (ipwb)
 
 optional arguments:
   -h, --help            show this help message and exit
   -d DAEMON_ADDRESS, --daemon DAEMON_ADDRESS
-                        Location of ipfs daemon (default 127.0.0.1:5001)
+                        Multi-address of IPFS daemon (default
+                        /dns/localhost/tcp/5001/http)
   -v, --version         Report the version of ipwb
+  -u, --update-check    Check whether an updated version of ipwb is available
 
 ipwb commands:
-  Invoke using "ipwb <command>", e.g., ipwb replay
+  Invoke using "ipwb <command>", e.g., ipwb replay <cdxjFile>
 
   {index,replay}
     index               Index a WARC file for replay in ipwb
@@ -157,12 +156,12 @@ ipwb commands:
 ```
 $ ipwb index -h
 usage: ipwb [-h] [-e] [-c] [--compressFirst] [-o OUTFILE] [--debug]
-            index <warcPath> [index <warcPath> ...]
+            index <warc_path> [index <warc_path> ...]
 
 Index a WARC file for replay in ipwb
 
 positional arguments:
-  index <warcPath>      Path to a WARC[.gz] file
+  index <warc_path>      Path to a WARC[.gz] file
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -206,7 +205,7 @@ We have numerous publications related to this project, but the most significant 
 
 > Mat Kelly, Sawood Alam, Michael L. Nelson, and Michele C. Weigle. __InterPlanetary Wayback: Peer-To-Peer Permanence of Web Archives__. In _Proceedings of the 20th International Conference on Theory and Practice of Digital Libraries_, pages 411–416, Hamburg, Germany, June 2016.
 
-```latex
+```bib
 @INPROCEEDINGS{ipwb-tpdl2016,
   AUTHOR    = {Mat Kelly and
                Sawood Alam and

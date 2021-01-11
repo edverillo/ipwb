@@ -1,5 +1,4 @@
-# Use Python 2.7 as default, but facilitate change at build time
-ARG        PYTHON_TAG=2.7
+ARG        PYTHON_TAG=3
 FROM       python:${PYTHON_TAG} AS base
 
 # Add some metadata
@@ -22,7 +21,7 @@ RUN        mkdir -p /data/{warc,cdxj,ipfs}
 
 # Download and install IPFS
 ENV        IPFS_PATH=/data/ipfs
-ARG        IPFS_VERSION=v0.4.17
+ARG        IPFS_VERSION=v0.6.0
 RUN        cd /tmp \
            && wget -q https://dist.ipfs.io/go-ipfs/${IPFS_VERSION}/go-ipfs_${IPFS_VERSION}_linux-amd64.tar.gz \
            && tar xvfz go-ipfs*.tar.gz \
@@ -42,6 +41,15 @@ COPY       requirements.txt ./
 RUN        pip install -r requirements.txt
 
 
+# Standard JS lint
+FROM       node
+WORKDIR    /ipwb
+COPY       . ./
+ARG        SKIPTEST=false
+RUN        $SKIPTEST || npm install -g standard
+RUN        $SKIPTEST || standard
+
+
 # Testing stage
 FROM base AS test
 
@@ -53,7 +61,7 @@ RUN        pip install -r test-requirements.txt
 COPY       . ./
 ARG        SKIPTEST=false
 RUN        $SKIPTEST || pycodestyle
-RUN        $SKIPTEST || (ipfs daemon & while ! curl -s localhost:5001 > /dev/null; do sleep 1; done && py.test --cov=./)
+RUN        $SKIPTEST || (ipfs daemon & while ! curl -s localhost:5001 > /dev/null; do sleep 1; done && py.test -s --cov=./)
 
 
 # Final production image

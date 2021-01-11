@@ -1,12 +1,14 @@
-function handleSubmit () {
-  let val = document.getElementById('url').value
+/* global uris */
+
+function handleSubmit () { // eslint-disable-line no-unused-vars
+  const val = document.getElementById('url').value
   if (val) {
     document.location += 'memento/*/' + val
   }
 }
 
 function shortestFirst (a, b) {
-  return a.length - b.length
+  return a.replace(/\/+$/, '').split('/').length - b.replace(/\/+$/, '').split('/').length
 }
 
 function hideURIs () {
@@ -15,27 +17,46 @@ function hideURIs () {
   window.localStorage.setItem('showURIs', 'false')
 }
 
-function addURIListToDOM () {
-  let ul = document.getElementById('uriList')
-  const uriKeys = Object.keys(uris).sort(shortestFirst)
-  for (let uri of uriKeys) {
-    for (let datetimesI = 0; datetimesI < uris[uri]['datetimes'].length; datetimesI++) {
-      let datetime = uris[uri]['datetimes'][datetimesI]
-
-      let li = document.createElement('li')
-      let a = document.createElement('a')
-      a.href = 'memento/' + datetime + '/' + uri
-      a.appendChild(document.createTextNode(uri))
-      dt = document.createTextNode(' (' + datetime + ')')
-
-      li.appendChild(a)
-      li.appendChild(dt)
-      li.setAttribute('data-mime', uris[uri]['mime'])
-      ul.appendChild(li)
-    }
-  }
+function splitDatetime (datetime) {
+  return datetime.replace(/(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})/, '$1-$2-$3 $4:$5:$6')
 }
 
+function addURIListToDOM () {
+  const ul = document.getElementById('uriList')
+  const uriKeys = Object.keys(uris).sort(shortestFirst)
+
+  uriKeys.forEach(urir => {
+    uris[urir].forEach(function (memento) {
+      const li = document.createElement('li')
+      const a = document.createElement('a')
+      const dt = document.createElement('span')
+      const title = memento.title || urir
+
+      a.href = 'memento/' + memento.datetime + '/' + urir
+      a.appendChild(document.createTextNode(title))
+      a.title = title
+
+      dt.setAttribute('class', 'datetime')
+      dt.appendChild(document.createTextNode(splitDatetime(memento.datetime)))
+
+      li.appendChild(dt)
+      li.appendChild(a)
+
+      li.setAttribute('data-mime', memento.mime)
+      li.setAttribute('data-status', memento.status)
+
+      const htmlMIMEs = ['text/html', 'application/xhtml+xml']
+      const mementoMIME = memento.mime.split(/\s*;/)[0].toLowerCase()
+      const isHTML = htmlMIMEs.includes(mementoMIME)
+
+      const isARedirect = memento.status[0] === '3'
+      if (isHTML && !isARedirect) {
+        li.setAttribute('data-display', 'default')
+      }
+      ul.appendChild(li)
+    })
+  })
+}
 
 function showURIs () {
   if (document.getElementById('uriList').childNodes.length === 0) {
@@ -58,7 +79,7 @@ function setUIExpandedState (urisObj) {
 }
 
 function calculateURIsHash (urisObj) {
-  return JSON.stringify(urisObj).hashCode()
+  return getStringHashCode(JSON.stringify(urisObj))
 }
 
 function getURIsHash () {
@@ -69,7 +90,7 @@ function setURIsHash (hashIn) {
   return window.localStorage.setItem('urisHash', hashIn)
 }
 
-String.prototype.hashCode = function () {
+function getStringHashCode (str) {
   let hash = 0
   let i
   let chr
@@ -92,11 +113,11 @@ function toggleURIDisplay () {
   }
 }
 
-function addEventListeners () {
-  let target = document.getElementById('memCountListLink')
+function addEventListeners () { // eslint-disable-line no-unused-vars
+  const target = document.getElementById('memCountListLink')
   target.addEventListener('click', toggleURIDisplay, false)
 
-  let showAllInListingButton = document.getElementById('showEmbeddedURI')
+  const showAllInListingButton = document.getElementById('showEmbeddedURI')
   showAllInListingButton.onclick = function showAllURIs () {
     const uriList = document.getElementById('uriList')
     if (this.innerHTML === this.dataset.defaultvalue) {
@@ -111,7 +132,7 @@ function addEventListeners () {
   getIPFSWebUIAddress()
   updateServiceWorkerVersionUI()
 
-  let reinstallServiceWorkerButton = document.getElementById('reinstallServiceWorker')
+  const reinstallServiceWorkerButton = document.getElementById('reinstallServiceWorker')
   reinstallServiceWorkerButton.onclick = reinstallServiceWorker
 
   setShowURIsVisibility()
@@ -144,8 +165,8 @@ function setShowAllButtonStatus () {
   }
 }
 
-function assignStatusButtonHandlers () {
-  let button = document.getElementsByTagName('button')[0]
+function assignStatusButtonHandlers () { // eslint-disable-line no-unused-vars
+  const button = document.getElementsByTagName('button')[0]
   if (button.innerHTML === 'Start') {
     button.addEventListener('click', startIPFSDaemon)
   } else {
@@ -171,7 +192,7 @@ function getIPFSWebUIAddress () {
   }
   const fail = function () { console.log('fail') }
   const err = function () { console.log('err') }
-  makeAnAJAXRequest('/ipwbconfig/openEndedPlaceHolder', setIPFSWebUILink, fail, err)
+  makeAnAJAXRequest('/ipfsdaemon/webuilink', setIPFSWebUILink, fail, err)
 }
 
 function updateIPFSDaemonButtonUI () {
@@ -188,10 +209,10 @@ function sendCommandToIPFSDaemon (cmd) {
 }
 
 function makeAnAJAXRequest (address, successFunction, failFunction, errorFunction) {
-  let xmlhttp = new XMLHttpRequest()
+  const xmlhttp = new window.XMLHttpRequest()
 
   xmlhttp.onreadystatechange = function () {
-    if (xmlhttp.readyState === XMLHttpRequest.DONE) {
+    if (xmlhttp.readyState === window.XMLHttpRequest.DONE) {
       if (xmlhttp.status === 200) {
         successFunction(xmlhttp.responseText)
       } else if (xmlhttp.status === 400) {
@@ -206,12 +227,12 @@ function makeAnAJAXRequest (address, successFunction, failFunction, errorFunctio
   xmlhttp.send()
 }
 
-function injectIPWBJS () {
+function injectIPWBJS () { // eslint-disable-line no-unused-vars
   registerServiceWorker()
 }
 
 function getServiceWorkerVersion () {
-  return fetch(self.location.href)
+  return window.fetch(document.location.href)
     .then(function (resp) {
       return Promise.resolve(resp.headers.get('Server').split('/')[1])
     })
@@ -227,7 +248,7 @@ function reinstallServiceWorker () {
 
 function deleteServiceWorker () {
   navigator.serviceWorker.getRegistrations().then(function (registrations) {
-    for (let registration of registrations) {
+    for (const registration of registrations) {
       registration.unregister()
     }
   })
@@ -247,7 +268,7 @@ function installServiceWorker () {
     newInstallation = true
   }
 
-  navigator.serviceWorker.register('/ipwbassets/serviceWorker.js', {scope: '/'}).then(
+  navigator.serviceWorker.register('/ipwbassets/serviceWorker.js', { scope: '/' }).then(
     function (registration) {
       console.log('ServiceWorker registration successful with scope: ', registration.scope)
     }).catch(function (err) {
@@ -269,16 +290,4 @@ function registerServiceWorker () {
   } else {
     console.log('Browser does not support Service Worker.')
   }
-}
-
-function serviceWorkerUpToDate () {
-
-}
-
-function updateServiceWorker () {
-
-}
-
-function reloadPageFromServiceWorker () {
-  console.log('reloading page from serviceWorker!')
 }
